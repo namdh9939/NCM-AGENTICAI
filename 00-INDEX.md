@@ -28,6 +28,7 @@
 | `05-handoff.md` | Context compact để paste vào session Claude mới | Mở session mới với Claude |
 | `06-master-base-setup.md` | Step-by-step build Layer 1 Master Base trên Lark (7 table) | Khi đi thực thi setup Base |
 | `07-master-base-handoff.md` | Handoff sau Đợt 1 execute qua MCP: Base URL, 7 table IDs, việc Nam cần làm Đợt 2 | Sau khi Claude execute qua MCP |
+| `08-dot-2-huong-dan-tung-buoc.md` | Hướng dẫn Đợt 2 click-by-click cho Nam (no-tech) | Khi Nam ngồi làm Master Base trên Lark |
 
 ---
 
