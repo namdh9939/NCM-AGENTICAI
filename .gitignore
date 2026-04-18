@@ -1,0 +1,37 @@
+# Secrets — never commit
+.env
+.env.local
+.env.*.local
+secrets/
+*.secret
+*.key
+
+# Local tool configs with tokens
+claude_desktop_config.json
+settings.local.json
+
+# Node / Python
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# Logs
+*.log
+logs/
+
+# Lark MCP data dumps (local cache)
+*.lark-cache
+exports/
