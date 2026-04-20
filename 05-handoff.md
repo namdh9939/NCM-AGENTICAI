@@ -34,8 +34,8 @@ Chiến lược tôi đã chốt:
 - Dashboard khách hàng đã có trong HBSS
 - 1 khách = 1 dự án (nếu > 1 thì tạo file riêng)
 - Payment sẽ move từ bộ phận tài chính vào HBSS
-- Track tên nhân viên cụ thể (không chỉ role)
-- Scorecard vendor đo MONTHLY để đo hài lòng khách
+- Track tên nhân viên cụ thể (không chỉ Vai trò)
+- Scorecard Đơn vị/Đối tác đo MONTHLY để đo hài lòng khách
 - Nhiều loại hợp đồng/dự án (TLXN, thiết kế, thi công, NTP...)
 
 Bước tiếp theo tôi muốn đi là: [CHỌN 1 TRONG 4 OPTIONS BÊN DƯỚI]
@@ -50,7 +50,7 @@ Entity-Relationship Diagram cho Warehouse schema. Text-based (mermaid hoặc ASC
 → Phù hợp khi muốn **hình dung tổng thể** trước khi vào chi tiết.
 
 ### [B] Detailed spec 4 table critical
-Deep-dive field-by-field cho: `project_info`, `project_payments`, `project_contracts`, `vendor_scorecards`.
+Deep-dive field-by-field cho: `Thông tin Dự án`, `Theo dõi Thanh toán`, `Quản lý Hợp đồng`, `Chấm điểm đối tác`.
 Bao gồm: constraint, index, default value, validation rule, ví dụ data.
 → Phù hợp khi muốn **bắt tay build ngay**.
 

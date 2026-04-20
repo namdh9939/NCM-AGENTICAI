@@ -26,8 +26,8 @@ Then configure Lark MCP in Claude Desktop — see [`04-mcp-setup.md`](./04-mcp-s
 
 | File | Purpose |
 |---|---|
-| [`00-INDEX.md`](./00-INDEX.md) | Master index + current status + next steps |
-| [`01-plan-v3.md`](./01-plan-v3.md) | AI Agent implementation plan v3 (Phase 0-3, 18 foundational tasks) |
+| [`00-INDEX.md`](./00-INDEX.md) | Master index + current Trạng thái + next steps |
+| [`01-plan-v3.md`](./01-plan-v3.md) | AI Agent implementation plan v3 (Phase 0-3, 18 foundational Checklist công việc chi tiết) |
 | [`02-hbss-review.md`](./02-hbss-review.md) | Review existing HBSS schema + 10 anti-patterns found |
 | [`03-data-model-v2.md`](./03-data-model-v2.md) | Data Model v2 blueprint (Master + Template + Warehouse) |
 | [`04-mcp-setup.md`](./04-mcp-setup.md) | Lark MCP config + troubleshooting |
@@ -37,7 +37,7 @@ Then configure Lark MCP in Claude Desktop — see [`04-mcp-setup.md`](./04-mcp-s
 
 ---
 
-## Current status (2026-04-18)
+## Current Trạng thái (2026-04-18)
 
 ✅ **Planning**: v3 final approved (3 review rounds)
 ✅ **HBSS review**: 8 tables analyzed, 10 anti-patterns identified
@@ -48,8 +48,8 @@ Then configure Lark MCP in Claude Desktop — see [`04-mcp-setup.md`](./04-mcp-s
 🟡 **Master Base Đợt 2** (in-progress — Nam's turn):
 - Move Base to shared folder
 - Add Formula / Lookup fields via UI
-- Provide staff list + vendor dedupe → seed via MCP
-- (customers_master schema-only — defer seed until Phase 2 Sales design)
+- Provide Nhân sự list + Đơn vị/Đối tác dedupe → seed via MCP
+- (Danh mục khách hàng schema-only — defer seed until Phase 2 Sales design)
 
 ⏭️ **Next**: Phase 2 Sales design (D) after Đợt 2 complete.
 

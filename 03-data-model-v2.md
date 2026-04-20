@@ -9,12 +9,12 @@
 
 | Q | Nam trả lời | Hệ quả kiến trúc |
 |---|---|---|
-| Q1 | Payment từ tài chính → move vào HBSS | `payments` phải first-class entity, + `payment_schedules` dự kiến |
-| Q2 | Track tên NV cụ thể | `staff` entity + `project_assignments` (N-N staff × project × role × period) |
-| Q3 | 1 khách = 1 dự án (nếu > tạo file riêng) | `customers` vẫn tách nhưng relationship 1-1 đơn giản |
-| Q4 | Scorecard **monthly** đo hài lòng KH | `vendor_scorecards` tách khỏi Ticket, trigger monthly, field `month_year` |
+| Q1 | Payment từ tài chính → move vào HBSS | `Theo dõi Thanh toán` phải first-class entity, + `payment_schedules` dự kiến |
+| Q2 | Track tên NV cụ thể | `Nhân sự` entity + `Phân công nhân sự` (N-N Nhân sự × project × Vai trò × period) |
+| Q3 | 1 khách = 1 dự án (nếu > tạo file riêng) | `Danh mục khách hàng` vẫn tách nhưng relationship 1-1 đơn giản |
+| Q4 | Scorecard **monthly** đo hài lòng KH | `Chấm điểm đối tác` tách khỏi Ticket, trigger monthly, field `month_year` |
 | Q5 | File hiện tại = template | **Migration cực đơn giản**: update template → dự án mới clone v2 |
-| Q6 | Nhiều loại HĐ (TLXN, Thiết kế, Thi công...) | `contracts` entity với `contract_type` enum |
+| Q6 | Nhiều loại HĐ (TLXN, Thiết kế, Thi công...) | `Quản lý Hợp đồng` entity với `contract_type` enum |
 
 ---
 
@@ -22,15 +22,15 @@
 
 ```
 LAYER 1 — MASTER BASE (Lark, shared toàn công ty)
-  8 table: customers, staff, vendors, categories, work_library,
-  sample_products, contract_types, materials
+  8 table: Danh mục khách hàng, Nhân sự, Danh mục đối tác, Danh mục hạng mục, Thư viện đầu việc,
+  Thư viện mẫu sản phẩm, Loại hợp đồng mẫu, Danh mục vật tư
   → Ít thay đổi, reference data
 
 LAYER 2 — PER-PROJECT BASE (Lark template v2)
-  17 table: project_info, milestones, stakeholders, tasks,
-  daily_logs, task_reports, issues, weekly_reports, scorecards,
-  contracts, quotes, budget_items, payments, change_orders,
-  documents, inspections, settings
+  17 table: Thông tin Dự án, Tiến độ dự án, Quản lý các bên liên quan, Checklist công việc chi tiết,
+  Nhật ký công trình, Báo cáo nghiệm thu nội bộ, Quản lý vấn đề và Sự cố, Báo cáo tuần, Chấm điểm đối tác,
+  Quản lý Hợp đồng, Báo giá & HSNL, Dự toán hạng mục, Theo dõi Thanh toán, Quản lý Phát sinh,
+  Kho tài liệu dự án, Công tác Nghiệm thu, Cấu hình Base
   → Mỗi dự án 1 file, clone từ template
 
 LAYER 3 — WAREHOUSE (PostgreSQL/Supabase)
@@ -42,15 +42,15 @@ LAYER 3 — WAREHOUSE (PostgreSQL/Supabase)
 
 ## LAYER 1 — MASTER BASE (8 tables)
 
-### 1.1 `customers_master`
+### 1.1 `Danh mục khách hàng`
 
 | Field | Type | Ghi chú |
 |---|---|---|
-| customer_code | Text (primary) | Auto `CUS-2026-001` |
-| full_name | Text | |
+| Mã khách hàng | Text (primary) | Auto `CUS-2026-001` |
+| Họ và tên | Text | |
 | phone_primary | Phone | |
 | phone_secondary | Phone | |
-| email | Email | |
+| Email | Email | |
 | id_card_number | Text | CCCD (PII — RBAC) |
 | date_of_birth | DateTime | |
 | address_permanent | Text | |
@@ -58,43 +58,43 @@ LAYER 3 — WAREHOUSE (PostgreSQL/Supabase)
 | referral_source | SingleSelect | FB / Google / Referral / Khác |
 | lark_chat_page_id | Text | Thay "Page ID (CĐT)" rải rác |
 | created_at | CreatedTime | |
-| notes | Text | |
+| Ghi chú | Text | |
 
-### 1.2 `staff_master`
+### 1.2 `Danh mục nhân sự`
 
 | Field | Type |
 |---|---|
-| staff_code | Text (primary) — `STAFF-001` |
-| full_name | Text |
+| Mã nhân viên | Text (primary) — `STAFF-001` |
+| Họ và tên | Text |
 | role_primary | SingleSelect (PM / AA / CA / Account / PO / PD / Sale / TK) |
 | roles_secondary | MultiSelect (kiêm nhiệm) |
 | email_work | Email |
-| phone | Phone |
+| Số điện thoại | Phone |
 | lark_user_id | Text |
 | active | Checkbox |
 | joined_date | DateTime |
 | left_date | DateTime (NULL nếu đang làm) |
 
-### 1.3 `vendors_master`
+### 1.3 `Danh mục đối tác`
 
 | Field | Type | Ghi chú |
 |---|---|---|
-| vendor_code | Text (primary) — `VEN-2026-001` | |
+| Mã đối tác | Text (primary) — `VEN-2026-001` | |
 | company_name | Text | |
 | vendor_type | MultiSelect (NTP-Thi công / NTP-Thiết kế / NCC-Vật tư / NCC-Thiết bị) | |
-| category_specialization | MultiSelect → `categories_master` | |
+| category_specialization | MultiSelect → `Danh mục hạng mục` | |
 | contact_person | Text | |
 | phone_company | Phone | |
 | phone_contact | Phone | |
 | address | Text | |
 | tax_code | Text | MST |
 | bank_info | Text | |
-| status | SingleSelect (Active / Trial / Blacklisted) | |
-| overall_score | Number (lookup từ scorecards) | **Nơi aggregate scorecard** |
+| Trạng thái | SingleSelect (Active / Trial / Blacklisted) | |
+| overall_score | Number (lookup từ Chấm điểm đối tác) | **Nơi aggregate scorecard** |
 | projects_count | Number (lookup) | |
-| notes | Text | |
+| Ghi chú | Text | |
 
-### 1.4 `categories_master`
+### 1.4 `Danh mục hạng mục`
 
 | Field | Type | Ghi chú |
 |---|---|---|
@@ -106,13 +106,13 @@ LAYER 3 — WAREHOUSE (PostgreSQL/Supabase)
 
 → **Xóa duplicate 3-way** hiện tại. Các table khác Link về đây.
 
-### 1.5 `work_library`
+### 1.5 `Thư viện đầu việc`
 
 | Field | Type | Ghi chú |
 |---|---|---|
-| work_item_code | Text (primary) — `W-001` | |
-| work_name | Text | VD: "Biên bản bàn giao ranh mốc" |
-| category | SingleLink → `categories_master` | |
+| Mã đầu việc | Text (primary) — `W-001` | |
+| Tên đầu việc | Text | VD: "Biên bản bàn giao ranh mốc" |
+| Hạng mục | SingleLink → `Danh mục hạng mục` | |
 | phase | SingleSelect | |
 | priority | SingleSelect (Mốc quan trọng / Thường) | |
 | default_owner_role | SingleSelect | |
@@ -124,16 +124,16 @@ LAYER 3 — WAREHOUSE (PostgreSQL/Supabase)
 
 → Thay vì duplicate 36+ work items/dự án, dự án Link tới library.
 
-### 1.6 `sample_products`
+### 1.6 `Thư viện mẫu sản phẩm`
 
 | Field | Type |
 |---|---|
 | sample_code | Text (primary) |
-| category | SingleLink → `categories_master` |
+| Hạng mục | SingleLink → `Danh mục hạng mục` |
 | description | Text |
 | images | Attachment |
 
-### 1.7 `contract_types_master` **(NEW)**
+### 1.7 `Loại hợp đồng mẫu` **(NEW)**
 
 | Field | Type | Ghi chú |
 |---|---|---|
@@ -149,7 +149,7 @@ LAYER 3 — WAREHOUSE (PostgreSQL/Supabase)
 |---|---|
 | material_code | Text (primary) |
 | material_name | Text |
-| category | SingleSelect (Xi măng / Thép / Gạch / Sơn…) |
+| Hạng mục | SingleSelect (Xi măng / Thép / Gạch / Sơn…) |
 | unit | SingleSelect (kg / m² / m³ / viên…) |
 | typical_price_vnd | Currency |
 
@@ -157,105 +157,105 @@ LAYER 3 — WAREHOUSE (PostgreSQL/Supabase)
 
 ## LAYER 2 — PER-PROJECT TEMPLATE v2 (17 tables)
 
-### 2.1 `project_info` **(NEW — 1 record/file, CORE)**
+### 2.1 `Thông tin Dự án` **(NEW — 1 record/file, CORE)**
 
 | Field | Type | Ghi chú |
 |---|---|---|
-| project_code | Text (primary) | Unique toàn công ty `PRJ-2026-042` |
-| project_name | Text | VD: "Nhà anh A Quận 7" |
-| customer | SingleLink → `customers_master` | |
-| site_address | Text | |
-| district | SingleSelect | Quận/huyện |
-| city | SingleSelect | TP.HCM / Hà Nội / Đà Nẵng |
+| Mã dự án | Text (primary) | Unique toàn công ty `PRJ-2026-042` |
+| Tên dự án | Text | VD: "Nhà anh A Quận 7" |
+| Khách hàng | SingleLink → `Danh mục khách hàng` | |
+| Địa chỉ công trình | Text | |
+| Quận/Huyện | SingleSelect | Quận/huyện |
+| Tỉnh/Thành phố | SingleSelect | TP.HCM / Hà Nội / Đà Nẵng |
 | land_area_m2 | Number | |
 | building_area_m2 | Number | |
 | floors_count | Number | |
 | basement_count | Number | |
 | building_type | SingleSelect | Phố / Biệt thự / Studio / Shophouse / Mini |
 | architecture_style | MultiSelect | Hiện đại / Tân cổ điển / Scandinavian / Industrial |
-| total_budget_vnd | Currency | Ngân sách dự kiến |
+| Tổng ngân sách (VNĐ) | Currency | Ngân sách dự kiến |
 | package_sku | SingleSelect | Gói TLXN khách chọn (liên kết Phase 2) |
 | contract_sign_date | DateTime | |
 | construction_start_date | DateTime | Dự kiến |
 | construction_start_actual | DateTime | Thực tế |
 | handover_planned_date | DateTime | Dự kiến |
 | handover_actual_date | DateTime | Thực tế |
-| status | SingleSelect | Pre-contract / Signed / Design / Construction / Handover / Warranty / Closed |
+| Trạng thái | SingleSelect | Pre-Hợp đồng liên quan / Signed / Design / Construction / Handover / Warranty / Closed |
 | lark_chat_customer_id | Text | Thay "Page ID (CĐT)" rải rác |
 | lark_chat_internal_id | Text | Thay "Page ID" nội bộ |
 
-### 2.2 `project_assignments` **(NEW)**
+### 2.2 `Phân công nhân sự` **(NEW)**
 
 | Field | Type |
 |---|---|
 | assignment_id | Text (primary) |
-| staff | SingleLink → `staff_master` |
-| role | SingleSelect (PM / AA / CA / Account / PO / PD) |
+| Nhân sự | SingleLink → `Danh mục nhân sự` |
+| Vai trò | SingleSelect (PM / AA / CA / Account / PO / PD) |
 | assigned_from | DateTime |
 | assigned_to | DateTime (NULL = đang active) |
-| notes | Text |
+| Ghi chú | Text |
 
-### 2.3 `project_stakeholders`
+### 2.3 `Quản lý các bên liên quan`
 
 | Field | Type |
 |---|---|
 | stakeholder_id | Text (primary) |
-| vendor | SingleLink → `vendors_master` |
-| category | SingleLink → `categories_master` |
+| Đơn vị/Đối tác | SingleLink → `Danh mục đối tác` |
+| Hạng mục | SingleLink → `Danh mục hạng mục` |
 | role_in_project | SingleSelect (Thi công chính / Phụ / Cung cấp) |
-| contract | SingleLink → `project_contracts` |
-| status | SingleSelect (Đang làm / Đã xong / Terminate) |
+| Hợp đồng liên quan | SingleLink → `Quản lý Hợp đồng` |
+| Trạng thái | SingleSelect (Đang làm / Đã xong / Terminate) |
 | joined_date | DateTime |
 | end_date | DateTime |
 
-### 2.4 `project_milestones`
+### 2.4 `Tiến độ dự án`
 
 Thay cho Table 1 "Chức năng bảng = Tiến độ".
 
 | Field | Type |
 |---|---|
 | milestone_name | Text (primary) |
-| category | SingleLink → `categories_master` |
-| phase | Lookup từ category |
-| planned_start | DateTime |
-| planned_end | DateTime |
-| actual_start | DateTime |
-| actual_end | DateTime |
+| Hạng mục | SingleLink → `Danh mục hạng mục` |
+| phase | Lookup từ Hạng mục |
+| Bắt đầu dự kiến | DateTime |
+| Kết thúc dự kiến | DateTime |
+| Bắt đầu thực tế | DateTime |
+| Kết thúc thực tế | DateTime |
 | extension_date | DateTime |
-| progress_percent | Progress |
+| % Hoàn thành | Progress |
 | is_critical | Checkbox |
 | owner_role | SingleSelect |
-| owner_staff | SingleLink → `staff_master` |
+| owner_staff | SingleLink → `Danh mục nhân sự` |
 | parent_milestone | SingleLink (self-ref) |
-| notes | Text |
+| Ghi chú | Text |
 
-### 2.5 `project_tasks`
+### 2.5 `Checklist công việc chi tiết`
 
 | Field | Type |
 |---|---|
 | task_code | Text (primary) — "1.1", "3.2" |
 | task_name | Text |
-| work_library_ref | SingleLink → `work_library` (optional) |
-| milestone | SingleLink → `project_milestones` |
+| work_library_ref | SingleLink → `Thư viện đầu việc` (optional) |
+| Mốc tiến độ | SingleLink → `Tiến độ dự án` |
 | parent_task | SingleLink (self-ref) |
 | owner_role | SingleSelect |
-| owner_staff | SingleLink → `staff_master` |
-| planned_start | DateTime |
-| planned_end | DateTime |
+| owner_staff | SingleLink → `Danh mục nhân sự` |
+| Bắt đầu dự kiến | DateTime |
+| Kết thúc dự kiến | DateTime |
 | extension_date | DateTime |
-| actual_completion | DateTime |
-| progress_percent | Progress |
-| status | SingleSelect (Chưa / Đang / Xong / Treo / Hủy) |
+| Thực tế hoàn thành | DateTime |
+| % Hoàn thành | Progress |
+| Trạng thái | SingleSelect (Chưa / Đang / Xong / Treo / Hủy) |
 | report_attachment | Attachment |
-| notes | Text |
+| Ghi chú | Text |
 
-### 2.6 `project_daily_logs`
+### 2.6 `Nhật ký công trình`
 
 | Field | Type |
 |---|---|
 | log_date | DateTime (primary, auto) |
 | reporter_name | Text |
-| vendor | SingleLink → `vendors_master` |
+| Đơn vị/Đối tác | SingleLink → `Danh mục đối tác` |
 | work_today | Text |
 | work_tomorrow | Text |
 | issues_proposals | Text |
@@ -263,61 +263,61 @@ Thay cho Table 1 "Chức năng bảng = Tiến độ".
 | delay_risk | SingleSelect (Có / Không) |
 | daily_status | SingleSelect (Cả ngày / Sáng nghỉ / Chiều nghỉ) |
 | site_photos | Attachment |
-| notes | Text |
+| Ghi chú | Text |
 
-### 2.7 `project_task_reports`
+### 2.7 `Báo cáo nghiệm thu nội bộ`
 
 | Field | Type |
 |---|---|
 | report_date | DateTime (primary) |
-| category | SingleLink → `categories_master` |
-| work_item | SingleLink → `work_library` |
+| Hạng mục | SingleLink → `Danh mục hạng mục` |
+| work_item | SingleLink → `Thư viện đầu việc` |
 | completion_percent | Progress |
 | quality | SingleSelect (Đạt / Cần cải thiện) |
 | confirmed_complete | Checkbox |
 | photos_ok | Attachment |
 | photos_issues | Attachment |
-| notes | Text |
+| Ghi chú | Text |
 
-### 2.8 `project_issues` (tách từ Table 3)
+### 2.8 `Quản lý vấn đề và Sự cố` (tách từ Table 3)
 
 | Field | Type |
 |---|---|
 | issue_id | Text (primary) |
 | created_date | CreatedTime |
-| creator | SingleLink → `staff_master` |
+| creator | SingleLink → `Danh mục nhân sự` |
 | description | Text |
 | related_areas | MultiSelect (Thiết kế / Pháp lý / Chất lượng / Chi phí / Tiến độ / An toàn / Khác) |
-| related_category | SingleLink → `categories_master` |
+| related_category | SingleLink → `Danh mục hạng mục` |
 | media | Attachment |
 | deadline | DateTime |
-| status | SingleSelect (Đang / Xong / Treo) |
+| Trạng thái | SingleSelect (Đang / Xong / Treo) |
 | resolution_action | Text |
 | resolved_date | DateTime |
-| assignee | SingleLink → `staff_master` |
-| notes | Text |
+| assignee | SingleLink → `Danh mục nhân sự` |
+| Ghi chú | Text |
 
-### 2.9 `project_weekly_reports` (tách từ Table 3)
+### 2.9 `Báo cáo tuần` (tách từ Table 3)
 
 | Field | Type |
 |---|---|
 | report_week | DateTime (primary — thứ 2 của tuần) |
-| milestone | SingleLink → `project_milestones` |
+| Mốc tiến độ | SingleLink → `Tiến độ dự án` |
 | progress_assessment | SingleSelect (Đúng / Chậm / Treo / Vượt) |
 | design_compliance | SingleSelect (✅ Đúng / ⚠️ Sai lệch / ❌ Nghiêm trọng) |
 | legal_note | Text |
 | quality_note | Text |
 | reviewer | SingleSelect (QLDA / CĐT) |
-| notes | Text |
+| Ghi chú | Text |
 
-### 2.10 `vendor_scorecards` **(MONTHLY cadence)**
+### 2.10 `Chấm điểm đối tác` **(MONTHLY cadence)**
 
 | Field | Type | Weight |
 |---|---|---|
 | scorecard_id | Text (primary) | |
 | month_year | DateTime | VD: 04/2026 |
-| vendor | SingleLink → `vendors_master` | |
-| category | SingleLink → `categories_master` | |
+| Đơn vị/Đối tác | SingleLink → `Danh mục đối tác` | |
+| Hạng mục | SingleLink → `Danh mục hạng mục` | |
 | score_cooperation | Rating 1-5 | 20% |
 | score_report_quality | Rating 1-5 | 15% |
 | score_response_time | Rating 1-5 | 15% |
@@ -329,73 +329,73 @@ Thay cho Table 1 "Chức năng bảng = Tiến độ".
 | improvement_action | Text | |
 | reviewer | SingleSelect (PM / QLDA / CĐT) | |
 
-**Rule**: UNIQUE (vendor, month_year, category) — tránh chấm 2 lần.
+**Rule**: UNIQUE (Đơn vị/Đối tác, month_year, Hạng mục) — tránh chấm 2 lần.
 
-### 2.11 `project_contracts` **(NEW)**
+### 2.11 `Quản lý Hợp đồng` **(NEW)**
 
 | Field | Type |
 |---|---|
 | contract_id | Text (primary) — `CTR-PRJ042-001` |
-| contract_type | SingleLink → `contract_types_master` |
+| contract_type | SingleLink → `Loại hợp đồng mẫu` |
 | title | Text |
-| party_a | SingleLink → `customers_master` / TLXN |
-| party_b | SingleLink → `vendors_master` / TLXN |
+| party_a | SingleLink → `Danh mục khách hàng` / TLXN |
+| party_b | SingleLink → `Danh mục đối tác` / TLXN |
 | sign_date | DateTime |
 | effective_date | DateTime |
 | end_date | DateTime |
-| total_value_vnd | Currency |
+| Giá trị hợp đồng (VNĐ) | Currency |
 | payment_terms | Text |
 | scanned_doc | Attachment |
-| status | SingleSelect (Draft / Active / Completed / Terminated) |
-| related_category | SingleLink → `categories_master` |
-| notes | Text |
+| Trạng thái | SingleSelect (Draft / Active / Completed / Terminated) |
+| related_category | SingleLink → `Danh mục hạng mục` |
+| Ghi chú | Text |
 
-### 2.12 `project_quotes`
+### 2.12 `Báo giá & HSNL`
 
 | Field | Type |
 |---|---|
 | quote_id | Text (primary) |
 | quote_date | DateTime |
-| category | SingleLink → `categories_master` |
-| vendor | SingleLink → `vendors_master` |
-| amount_vnd | Currency |
+| Hạng mục | SingleLink → `Danh mục hạng mục` |
+| Đơn vị/Đối tác | SingleLink → `Danh mục đối tác` |
+| Số tiền (VNĐ) | Currency |
 | quote_doc | Attachment |
 | capability_docs | Attachment (HSNL, ảnh thi công cũ) |
 | selected | Checkbox |
-| notes | Text |
+| Ghi chú | Text |
 
-### 2.13 `project_budget_items`
+### 2.13 `Dự toán hạng mục`
 
 | Field | Type |
 |---|---|
 | budget_item_id | Text (primary) |
-| category | SingleLink → `categories_master` |
+| Hạng mục | SingleLink → `Danh mục hạng mục` |
 | description | Text |
 | planned_amount_vnd | Currency |
 | proposed_date | DateTime |
 | proposal_doc | Attachment |
-| status | SingleSelect (Chờ / Duyệt / Hủy) |
-| notes | Text |
+| Trạng thái | SingleSelect (Chờ / Duyệt / Hủy) |
+| Ghi chú | Text |
 
-### 2.14 `project_payments` **(MAJOR UPGRADE — Q1 integration)**
+### 2.14 `Theo dõi Thanh toán` **(MAJOR UPGRADE — Q1 integration)**
 
 | Field | Type | Ghi chú |
 |---|---|---|
 | payment_id | Text (primary) | |
-| payment_date | DateTime | |
-| contract | SingleLink → `project_contracts` | **Bắt buộc** |
+| Ngày thanh toán | DateTime | |
+| Hợp đồng liên quan | SingleLink → `Quản lý Hợp đồng` | **Bắt buộc** |
 | payment_type | SingleSelect | Thanh toán HĐ / Phát sinh / Tạm ứng / Hoàn ứng |
 | installment_no | Number | Đợt thứ mấy |
-| payee | SingleLink → `vendors_master` hoặc `customers_master` | |
+| Người thụ hưởng | SingleLink → `Danh mục đối tác` hoặc `Danh mục khách hàng` | |
 | amount_contract_vnd | Currency | Theo HĐ |
-| amount_actual_vnd | Currency | Thực chi |
+| Số tiền chi thực tế | Currency | Thực chi |
 | amount_variance_vnd | Formula | Chênh lệch auto |
 | payment_method | SingleSelect | Chuyển khoản / Tiền mặt / Séc |
 | receipt_doc | Attachment | Bill/phiếu chi |
-| approved_by | SingleLink → `staff_master` | |
-| notes | Text | |
+| approved_by | SingleLink → `Danh mục nhân sự` | |
+| Ghi chú | Text | |
 
-### 2.15 `project_change_orders` **(NEW)**
+### 2.15 `Quản lý Phát sinh` **(NEW)**
 
 | Field | Type |
 |---|---|
@@ -403,38 +403,38 @@ Thay cho Table 1 "Chức năng bảng = Tiến độ".
 | requested_date | DateTime |
 | requested_by | SingleSelect (Khách / PM / NTP) |
 | description | Text |
-| affected_categories | MultiSelect → `categories_master` |
+| affected_categories | MultiSelect → `Danh mục hạng mục` |
 | cost_impact_vnd | Currency |
 | schedule_impact_days | Number |
 | approval_status | SingleSelect (Chờ / Duyệt / Reject) |
-| approved_by | SingleLink → `staff_master` |
+| approved_by | SingleLink → `Danh mục nhân sự` |
 | approved_date | DateTime |
 | supporting_docs | Attachment |
-| related_contract | SingleLink → `project_contracts` |
+| related_contract | SingleLink → `Quản lý Hợp đồng` |
 
-### 2.16 `project_documents`
+### 2.16 `Kho tài liệu dự án`
 
 | Field | Type |
 |---|---|
 | doc_id | Text (primary) |
 | upload_date | CreatedTime |
-| uploaded_by | SingleLink → `staff_master` |
-| category | SingleSelect (Pháp lý / Thiết kế / Thi công / HĐ / Phát sinh / Khác) |
+| uploaded_by | SingleLink → `Danh mục nhân sự` |
+| Hạng mục | SingleSelect (Pháp lý / Thiết kế / Thi công / HĐ / Phát sinh / Khác) |
 | title | Text |
 | file | Attachment |
-| related_category | SingleLink → `categories_master` |
-| related_contract | SingleLink → `project_contracts` |
-| notes | Text |
+| related_category | SingleLink → `Danh mục hạng mục` |
+| related_contract | SingleLink → `Quản lý Hợp đồng` |
+| Ghi chú | Text |
 
-### 2.17 `project_inspections` **(NEW)**
+### 2.17 `Công tác Nghiệm thu` **(NEW)**
 
 | Field | Type |
 |---|---|
 | inspection_id | Text (primary) |
 | inspection_date | DateTime |
-| category | SingleLink → `categories_master` |
-| milestone | SingleLink → `project_milestones` |
-| inspector_internal | SingleLink → `staff_master` |
+| Hạng mục | SingleLink → `Danh mục hạng mục` |
+| Mốc tiến độ | SingleLink → `Tiến độ dự án` |
+| inspector_internal | SingleLink → `Danh mục nhân sự` |
 | inspector_customer | Checkbox |
 | result | SingleSelect (Pass / Conditional / Fail) |
 | issues_found | Text |
@@ -443,42 +443,42 @@ Thay cho Table 1 "Chức năng bảng = Tiến độ".
 | follow_up_needed | Checkbox |
 | follow_up_deadline | DateTime |
 
-### 2.18 `project_settings`
+### 2.18 `Cấu hình Base`
 
 | Field | Type |
 |---|---|
 | setting_key | Text (primary) |
 | setting_value | Text |
-| notes | Text |
+| Ghi chú | Text |
 
 ---
 
 ## LAYER 3 — WAREHOUSE SCHEMA
 
 ### Master entities (8)
-`customers, staff, vendors, categories, work_library, sample_products, contract_types, materials`
+`Danh mục khách hàng, Nhân sự, Danh mục đối tác, Danh mục hạng mục, Thư viện đầu việc, Thư viện mẫu sản phẩm, Loại hợp đồng mẫu, Danh mục vật tư`
 
 ### Project entities (19)
 ```
 projects (1 row/project)
-project_assignments         (staff × project × role)
-project_stakeholders        (vendor × project)
-project_milestones
-project_tasks
-project_daily_logs
-project_task_reports
-project_issues
-project_weekly_reports
-vendor_scorecards           (monthly)
-contracts
-quotes
-budget_items
-payments
+Phân công nhân sự         (Nhân sự × project × Vai trò)
+Quản lý các bên liên quan        (Đơn vị/Đối tác × project)
+Tiến độ dự án
+Checklist công việc chi tiết
+Nhật ký công trình
+Báo cáo nghiệm thu nội bộ
+Quản lý vấn đề và Sự cố
+Báo cáo tuần
+Chấm điểm đối tác           (monthly)
+Quản lý Hợp đồng
+Báo giá & HSNL
+Dự toán hạng mục
+Theo dõi Thanh toán
 payment_schedules           (lịch dự kiến, khác actual)
-change_orders
-documents
-inspections
-settings
+Quản lý Phát sinh
+Kho tài liệu dự án
+Công tác Nghiệm thu
+Cấu hình Base
 ```
 
 ### Analytics views (materialized)
@@ -495,9 +495,9 @@ payment_cashflow_monthly
 
 ### Constraints quan trọng
 - `projects.customer_id` UNIQUE (Q3: 1 khách = 1 dự án)
-- `payments.contract_id` NOT NULL (mọi payment phải link HĐ)
-- `vendor_scorecards` UNIQUE (vendor_id, month_year, category_id)
-- `project_assignments` UNIQUE (project_id, staff_id, role, valid_period)
+- `Theo dõi Thanh toán.contract_id` NOT NULL (mọi payment phải link HĐ)
+- `Chấm điểm đối tác` UNIQUE (vendor_id, month_year, category_id)
+- `Phân công nhân sự` UNIQUE (project_id, staff_id, Vai trò, valid_period)
 
 ---
 
@@ -509,13 +509,13 @@ Vì **Q5: file hiện tại = template** → migration cực đơn giản.
 - Tạo Base Lark mới "Master Data TLXN"
 - 8 table master
 - Seed data:
-  - `categories`: import 44 hạng mục
-  - `work_library`: import 36 checklist items
-  - `sample_products`: import từ Table 8
-  - `contract_types`: nhập 5-6 loại HĐ
-  - `staff`: danh sách nhân viên hiện có
-  - `customers`: seed từ dự án đang chạy
-  - `vendors`: dedupe từ "Tên đơn vị thi công" hiện có
+  - `Danh mục hạng mục`: import 44 hạng mục
+  - `Thư viện đầu việc`: import 36 checklist items
+  - `Thư viện mẫu sản phẩm`: import từ Table 8
+  - `Loại hợp đồng mẫu`: nhập 5-6 loại HĐ
+  - `Nhân sự`: danh sách nhân viên hiện có
+  - `Danh mục khách hàng`: seed từ dự án đang chạy
+  - `Danh mục đối tác`: dedupe từ "Tên đơn vị thi công" hiện có
 
 ### Bước 2 — Tạo template v2 (tuần 2)
 - Tạo Base Lark "HBSS Template v2"
@@ -560,6 +560,6 @@ Vì **Q5: file hiện tại = template** → migration cực đơn giản.
 ## Next actions options
 
 - **[A]** Vẽ ERD chi tiết (text/mermaid)
-- **[B]** Detailed spec 3-4 table critical (project_info, payments, contracts, vendor_scorecards)
+- **[B]** Detailed spec 3-4 table critical (Thông tin Dự án, Theo dõi Thanh toán, Quản lý Hợp đồng, Chấm điểm đối tác)
 - **[C]** Kế hoạch setup Master Base (bấm gì trên Lark UI)
 - **[D]** Chuyển sang Phase 2 (Sales) — đồng bộ data model cho cả QLDA + Sales

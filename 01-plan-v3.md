@@ -25,7 +25,7 @@
 
 | # | Việc | Output |
 |---|---|---|
-| 0.1 | Kiến trúc tổng thể: Orchestrator + Sub-agents + **Message protocol chuẩn giữa agent (A2A contract)** | Sơ đồ hệ thống + message schema |
+| 0.1 | Kiến trúc tổng thể: Orchestrator + Sub-agents + **Message protocol chuẩn giữa agent (A2A Hợp đồng liên quan)** | Sơ đồ hệ thống + message schema |
 | 0.2 | Tech stack: n8n + Lark + Zalo + model provider | Tech stack confirmed |
 | 0.3 | **Schema dùng chung** — bắt buộc có `tenant_id`, `version`, `updated_at`, `audit_by` từ ngày 1 | Data schema v1 multi-tenant |
 | 0.4 | Nguyên tắc SOP agent-ready (IF/THEN, trigger, decision point, SLA) | SOP template chuẩn |
@@ -35,7 +35,7 @@
 
 | # | Việc | Output |
 |---|---|---|
-| 0.6 | **Access Control & Security**: RBAC cho từng agent, API role n8n → Lark/HBSS, **content-level guard chống prompt injection** (system prompt isolation, output filter, PII redactor) | Security policy v1 |
+| 0.6 | **Access Control & Security**: RBAC cho từng agent, API Vai trò n8n → Lark/HBSS, **content-level guard chống prompt injection** (system prompt isolation, output filter, PII redactor) | Security policy v1 |
 | 0.7 | **Audit Trail & Logging**: trace mọi quyết định (input → prompt → retrieval → output → action), cost + latency log | Observability stack |
 | 0.8 | **HITL Policy matrix**: việc nào auto / việc nào approve. Threshold cho tin ra ngoài, tài chính, sửa data khách. Tách hard constraint vs soft metric | HITL policy v1 |
 | 0.12 | **Kill Switch 3 tầng**: tắt 1 agent / 1 nhóm / toàn bộ. Định nghĩa fallback human = ai, SLA nhận việc bao lâu | Kill switch spec |
@@ -88,7 +88,7 @@
 | 1B.1 | **Schema HBSS** đủ cho agent đọc/ghi **+ webhook outbound + version field + audit field** | HBSS schema v2 (xem 03-data-model-v2.md) |
 | 1B.2 | SOP agent-ready cho toàn bộ event QLDA | SOP QLDA hoàn chỉnh |
 | 1B.3 | Agent backlog + ưu tiên | Agent backlog QLDA |
-| 1B.4 | **Validation Gate**: mỗi handover có contract 2 chiều, log reject vào Audit Trail | Gate spec |
+| 1B.4 | **Validation Gate**: mỗi handover có Hợp đồng liên quan 2 chiều, log reject vào Audit Trail | Gate spec |
 | 1B.5 | **Knowledge hybrid**: Decision critical → hardcode rule; Tra cứu mềm → RAG từ SOP markdown; Soạn tin/tóm tắt → LLM+few-shot | Knowledge architecture |
 | 1B.6 | **Prompt & SOP version control**: version tag, rollback cơ chế | Versioning spec |
 

@@ -77,14 +77,14 @@ Mọi bảng đều có 4 field tra cứu Page ID/PID về Setup table. 4 × 8 =
 Thông tin khách rải rác trong text field của Table 1 (`Tên đơn vị thi công`, `Chức vụ`, `SĐT`, `Địa chỉ công ty`). Không normalized.
 
 **#8. Không có entity Nhân Viên (Staff)**
-`Phụ trách chính` chỉ là SingleSelect role (PM/AA/CA/Account) — **không biết tên cụ thể**. Không thể đo performance cá nhân.
+`Phụ trách chính` chỉ là SingleSelect Vai trò (PM/AA/CA/Account) — **không biết tên cụ thể**. Không thể đo performance cá nhân.
 
 **#9. Không có entity Nhà Thầu (Vendor)**
 "Tên đơn vị thi công" là text tự do → "ABC" và "ABC Co." không match. **Scorecard 7 tiêu chí có sẵn ở Table 3 không thể aggregate cross-project** — đáng tiếc nhất.
 
 **#10. Data payment sparse & sai mục đích**
 
-Table 4 có 18 field nhưng 7 record, `Nội dung` lưu comma-separated role names chứ không phải transaction thật. Q1 confirm: payment tracking đang ở bộ phận tài chính, chưa dùng HBSS.
+Table 4 có 18 field nhưng 7 record, `Nội dung` lưu comma-separated Vai trò names chứ không phải transaction thật. Q1 confirm: payment tracking đang ở bộ phận tài chính, chưa dùng HBSS.
 
 ---
 
@@ -92,7 +92,7 @@ Table 4 có 18 field nhưng 7 record, `Nội dung` lưu comma-separated role nam
 
 1. **44 hạng mục chi tiết** — từ `Tiếp nhận` → `BTCT tầng 1-6` → `Thạch cao/Sơn/PCCC` → `Nghiệm thu`. Đây là gold data, không công ty VN nào có.
 2. **36 checklist công việc cụ thể** ở Table 2 — *"Biên bản bàn giao ranh mốc", "Giấy kiểm định đồng hồ ép cọc", "Nhồi cát/đá mi vào khe cừ C"…* — training data cực quý cho AI.
-3. **Scorecard 7 tiêu chí có weight** (20/15/15/15/15/10/10 %) — framework tốt, chỉ thiếu entity vendor để aggregate.
+3. **Scorecard 7 tiêu chí có weight** (20/15/15/15/15/10/10 %) — framework tốt, chỉ thiếu entity Đơn vị/Đối tác để aggregate.
 4. **Daily log NTP** (Table 6) với số nhân công, tình trạng (cả ngày/sáng/chiều), nguy cơ chậm — operational tracking ngon.
 5. **Hierarchy task** ở Table 2 (1.1, 1.2, 3.1…) — structure tốt cho work breakdown.
 
@@ -105,17 +105,17 @@ Record 1: `Nội dung="Tiếp nhận thông tin"`, `Hạng mục="Tiếp nhận 
 → Dự án mẫu đang ở giai đoạn đầu, chưa khởi công.
 
 ### Từ Table 2
-- 232 tasks
+- 232 Checklist công việc chi tiết
 - Hierarchy đánh số: "1.1 Nhận bàn giao thông tin từ sale", "1.2 Tạo nhóm Zalo, chào khách hàng", "3.1 Mặt bằng công năng"
 - Owner: PM / Account / CA / AA — vai trò rõ
 - Task "Tạo nhóm Zalo, chào khách hàng" được treat như công việc → communication cũng là structured task
 
 ### Từ Table 3
 - 4 record: có cả Ticket + Báo cáo tuần + Scorecard (confirm polymorphic)
-- Phụ trách field có value "Nhà thầu PCCC" — text lookup, không phải vendor entity
+- Phụ trách field có value "Nhà thầu PCCC" — text lookup, không phải Đơn vị/Đối tác entity
 
 ### Từ Table 4
-- 7 record sparse, `Nội dung` lưu "Nhà thầu chính,Đội thi công điện nước" (role names comma-separated)
+- 7 record sparse, `Nội dung` lưu "Nhà thầu chính,Đội thi công điện nước" (Vai trò names comma-separated)
 - Confirm: payment thực đang không ở đây
 
 ### Từ Table 8 (Thiết lập)
@@ -131,9 +131,9 @@ Record 1: `Nội dung="Tiếp nhận thông tin"`, `Hạng mục="Tiếp nhận 
 
 Thành công thôi không đủ để scale 1000 dự án/năm. Cần:
 1. **Tách các MEGA table** thành table riêng theo responsibility
-2. **Thêm entity thiếu**: project_info, customer, staff, vendor, contract, payment, change_order, inspection
+2. **Thêm entity thiếu**: Thông tin Dự án, Khách hàng, Nhân sự, Đơn vị/Đối tác, Hợp đồng liên quan, payment, change_order, inspection
 3. **Di chuyển master data** ra 1 Base riêng (không per-project)
-4. **Chuẩn hóa identifier**: project_code/customer_code/vendor_code thay cho Lark chat ID
+4. **Chuẩn hóa identifier**: Mã dự án/Mã khách hàng/Mã đối tác thay cho Lark chat ID
 5. **Xây Warehouse layer** để cross-project query + training data cho AI
 
 Data model v2 giải quyết toàn bộ → xem `03-data-model-v2.md`.

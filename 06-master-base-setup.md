@@ -3,7 +3,7 @@
 **Date**: 2026-04-18
 **Mục đích**: Hướng dẫn click-by-click build Layer 1 Master Base cho TLXN
 **Đối tượng**: Nam + team no-code (không cần SQL)
-**Scope**: 7 table (skip `material_catalog` v2), trong đó `customers_master` chỉ dựng schema (chưa seed — chờ D xong)
+**Scope**: 7 table (skip `material_catalog` v2), trong đó `Danh mục khách hàng` chỉ dựng schema (chưa seed — chờ D xong)
 
 ---
 
@@ -12,13 +12,13 @@
 | Bước | Table | Seed data? | Thời gian ước tính |
 |---|---|---|---|
 | 0 | Tạo Base mới | - | 5' |
-| 1 | `categories_master` | ✅ 44 hạng mục | 30' |
-| 2 | `contract_types_master` | ✅ 5-6 loại | 15' |
-| 3 | `staff_master` | ✅ toàn bộ NV | 20' |
-| 4 | `work_library` | ✅ 36 items | 45' |
-| 5 | `sample_products` | ✅ từ Table 8 cũ | 20' |
-| 6 | `vendors_master` | ✅ dedupe từ HBSS cũ | 45' |
-| 7 | `customers_master` | 🟡 **SCHEMA ONLY** | 15' |
+| 1 | `Danh mục hạng mục` | ✅ 44 hạng mục | 30' |
+| 2 | `Loại hợp đồng mẫu` | ✅ 5-6 loại | 15' |
+| 3 | `Danh mục nhân sự` | ✅ toàn bộ NV | 20' |
+| 4 | `Thư viện đầu việc` | ✅ 36 items | 45' |
+| 5 | `Thư viện mẫu sản phẩm` | ✅ từ Table 8 cũ | 20' |
+| 6 | `Danh mục đối tác` | ✅ dedupe từ HBSS cũ | 45' |
+| 7 | `Danh mục khách hàng` | 🟡 **SCHEMA ONLY** | 15' |
 | 8 | Verification | - | 15' |
 | 9 | Permissions | - | 10' |
 
@@ -29,7 +29,7 @@
 ## 📌 Quy ước & lưu ý Lark trước khi bắt đầu
 
 ### Primary field
-Mỗi table Lark có **1 primary field** (cột đầu tiên, không xóa được). Đây là field hiển thị khi được Link từ table khác. Ta sẽ dùng cột `xxx_code` làm primary (vd: `category_name`, `staff_code`, `vendor_code`).
+Mỗi table Lark có **1 primary field** (cột đầu tiên, không xóa được). Đây là field hiển thị khi được Link từ table khác. Ta sẽ dùng cột `xxx_code` làm primary (vd: `category_name`, `Mã nhân viên`, `Mã đối tác`).
 
 ### Auto-code pattern (cho mọi `*_code`)
 Lark không có auto-increment native. Dùng combo:
@@ -43,22 +43,22 @@ Lark không có auto-increment native. Dùng combo:
 Cho field có năm: `CONCATENATE("CUS-", TEXT(YEAR(CREATED_TIME()), "0"), "-", TEXT({auto_num}, "000"))` → `CUS-2026-001`.
 
 ### SingleLink vs MultiLink
-- `SingleLink` = liên kết 1 record ở table khác (vd: vendor → category chính)
-- `MultiSelect Link` (Lark gọi là "Link multi") = nhiều records (vd: vendor chuyên nhiều hạng mục)
+- `SingleLink` = liên kết 1 record ở table khác (vd: Đơn vị/Đối tác → Hạng mục chính)
+- `MultiSelect Link` (Lark gọi là "Link multi") = nhiều records (vd: Đơn vị/Đối tác chuyên nhiều hạng mục)
 
 Khi tạo field type chọn **"Link to other tables"** → chọn table đích → toggle "Allow multiple records" nếu MultiLink.
 
 ### UNIQUE constraint
 Lark **không có UNIQUE native**. Workaround:
 - Field `auto_num` đảm bảo ID unique
-- Với business unique (vd: `staff_code` không trùng tên), dùng **Filtered view** check duplicate + training team
+- Với business unique (vd: `Mã nhân viên` không trùng tên), dùng **Filtered view** check duplicate + training team
 
 ### Formula sẽ cần
 | Field | Công thức |
 |---|---|
 | `xxx_code` (no year) | `CONCATENATE("PREFIX-", TEXT({auto_num}, "000"))` |
 | `xxx_code` (có năm) | `CONCATENATE("PREFIX-", TEXT(YEAR(CREATED_TIME()), "0"), "-", TEXT({auto_num}, "000"))` |
-| `amount_variance_vnd` | `{amount_actual_vnd} - {amount_contract_vnd}` |
+| `amount_variance_vnd` | `{Số tiền chi thực tế} - {amount_contract_vnd}` |
 | `total_score` (scorecard) | `{score_cooperation}*0.2 + {score_report_quality}*0.15 + ...` |
 
 ---
@@ -71,13 +71,13 @@ Lark **không có UNIQUE native**. Workaround:
 4. Đặt tên: **`TLXN Master Data v2`**
 5. Folder: **Shared Space** của TLXN (không để private — team cần access)
 6. Click **Create**
-7. Đổi tên **Table 1** mặc định thành **`categories_master`** (click chuột phải tab → Rename)
+7. Đổi tên **Table 1** mặc định thành **`Danh mục hạng mục`** (click chuột phải tab → Rename)
 
 → Base mới có 1 table empty. Copy **App Token** từ URL: `base/XXXXXXXXX` — lưu vào file `04-mcp-setup.md` dưới mục "Master Base app token".
 
 ---
 
-## Bước 1 — `categories_master` (44 hạng mục)
+## Bước 1 — `Danh mục hạng mục` (44 hạng mục)
 
 ### 1.1 Schema
 
@@ -90,13 +90,13 @@ Xóa toàn bộ default field. Tạo lần lượt (click dấu `+` cuối hàng
 | 3 | `display_order` | **Number** | Integer, không decimal |
 | 4 | `typical_duration_days` | **Number** | Integer, cho phép empty |
 | 5 | `active` | **Checkbox** | Default: checked |
-| 6 | `notes` | **Text** | Long text |
+| 6 | `Ghi chú` | **Text** | Long text |
 
 ### 1.2 Seed 44 hạng mục
 
 Mở HBSS cũ (`Ju2dbkBEzaPX6KskHQSlnI3Mgvb`) → Table 8 **Thiết Lập** → filter `Chức năng bảng = Thiết lập` → lấy danh sách 44 hạng mục.
 
-**Cách nhanh**: Copy toàn cột category ở HBSS cũ → paste trực tiếp vào `category_name` (Lark hỗ trợ paste multi-row).
+**Cách nhanh**: Copy toàn cột Hạng mục ở HBSS cũ → paste trực tiếp vào `category_name` (Lark hỗ trợ paste multi-row).
 
 **Sau khi paste xong**, điền:
 - `phase` cho từng row (Trước xây / Phần thô / …)
@@ -112,7 +112,7 @@ Mở HBSS cũ (`Ju2dbkBEzaPX6KskHQSlnI3Mgvb`) → Table 8 **Thiết Lập** → 
 
 ---
 
-## Bước 2 — `contract_types_master` (5-6 loại)
+## Bước 2 — `Loại hợp đồng mẫu` (5-6 loại)
 
 ### 2.1 Schema
 
@@ -140,50 +140,50 @@ Upload template HĐ mẫu (nếu có) vào `typical_template_doc`.
 
 ---
 
-## Bước 3 — `staff_master`
+## Bước 3 — `Danh mục nhân sự`
 
 ### 3.1 Schema
 
 | # | Field | Type | Config |
 |---|---|---|---|
-| 1 | `staff_code` | **Formula** | `CONCATENATE("STAFF-", TEXT({auto_num}, "000"))` — Primary |
+| 1 | `Mã nhân viên` | **Formula** | `CONCATENATE("STAFF-", TEXT({auto_num}, "000"))` — Primary |
 | 2 | `auto_num` | **Autonumber** | Ẩn cột này đi (click chuột phải field → Hide) |
-| 3 | `full_name` | **Text** | |
+| 3 | `Họ và tên` | **Text** | |
 | 4 | `role_primary` | **SingleSelect** | `PM`, `AA`, `CA`, `Account`, `PO`, `PD`, `Sale`, `TK`, `QA`, `BOD` |
 | 5 | `roles_secondary` | **MultiSelect** | Cùng options với role_primary |
 | 6 | `email_work` | **Email** | |
-| 7 | `phone` | **Phone** | |
+| 7 | `Số điện thoại` | **Phone** | |
 | 8 | `lark_user_id` | **Text** | Điền sau, cần query từ Lark contact |
 | 9 | `active` | **Checkbox** | Default: checked |
 | 10 | `joined_date` | **Date** | |
 | 11 | `left_date` | **Date** | Empty nếu đang làm |
-| 12 | `notes` | **Text** | |
+| 12 | `Ghi chú` | **Text** | |
 
 ### 3.2 Seed
 
-Nhập danh sách NV hiện tại. Mỗi row 1 NV. `staff_code` sẽ auto-generate khi save row.
+Nhập danh sách NV hiện tại. Mỗi row 1 NV. `Mã nhân viên` sẽ auto-generate khi save row.
 
-⚠️ **Lưu ý PII**: `phone`, `email_work` là thông tin nội bộ → sau này set permission ở Bước 9 để chỉ BOD + HR thấy hết, PM/CA chỉ thấy tên + role.
+⚠️ **Lưu ý PII**: `Số điện thoại`, `email_work` là thông tin nội bộ → sau này set permission ở Bước 9 để chỉ BOD + HR thấy hết, PM/CA chỉ thấy tên + Vai trò.
 
 ### 3.3 Query `lark_user_id` (optional, làm sau)
 
-Dùng MCP tool `contact_v3_user_batchGetId` với email → trả về `user_id`. Chạy batch sau khi seed xong.
+Dùng MCP tool `contact_v3_user_batchGetId` với Email → trả về `user_id`. Chạy batch sau khi seed xong.
 
 ---
 
-## Bước 4 — `work_library` (36 items)
+## Bước 4 — `Thư viện đầu việc` (36 items)
 
 ### 4.1 Schema
 
 | # | Field | Type | Config |
 |---|---|---|---|
-| 1 | `work_item_code` | **Formula** | `CONCATENATE("W-", TEXT({auto_num}, "000"))` — Primary |
+| 1 | `Mã đầu việc` | **Formula** | `CONCATENATE("W-", TEXT({auto_num}, "000"))` — Primary |
 | 2 | `auto_num` | **Autonumber** | Hide |
-| 3 | `work_name` | **Text** | |
-| 4 | `category` | **Link** → `categories_master` | Single |
-| 5 | `phase` | **Lookup** | Auto từ `category.phase` |
+| 3 | `Tên đầu việc` | **Text** | |
+| 4 | `Hạng mục` | **Link** → `Danh mục hạng mục` | Single |
+| 5 | `phase` | **Lookup** | Auto từ `Hạng mục.phase` |
 | 6 | `priority` | **SingleSelect** | `Mốc quan trọng`, `Thường` |
-| 7 | `default_owner_role` | **SingleSelect** | Giống role_primary ở staff_master |
+| 7 | `default_owner_role` | **SingleSelect** | Giống role_primary ở Danh mục nhân sự |
 | 8 | `standard_doc` | **Attachment** | Tiêu chuẩn thi công |
 | 9 | `sample_image` | **Attachment** | |
 | 10 | `preparation_note` | **Text** | Long text |
@@ -193,16 +193,16 @@ Dùng MCP tool `contact_v3_user_batchGetId` với email → trả về `user_id`
 
 **Cách tạo Lookup `phase`** (Field #5):
 1. Thêm field type **"Lookup"**
-2. Target link: chọn field `category`
-3. Target field to look up: chọn `phase` từ categories_master
+2. Target link: chọn field `Hạng mục`
+3. Target field to look up: chọn `phase` từ Danh mục hạng mục
 4. Save
 
 ### 4.2 Seed 36 items
 
 Mở HBSS cũ → Table 2 **Việc Thiết Kế & Thi Công** → lấy 36 work name ("Biên bản bàn giao ranh mốc", "Tạo nhóm Zalo, chào khách hàng", "Mặt bằng công năng"…).
 
-Copy `work_name` → paste vào `work_name` field. Sau đó cho mỗi row:
-- Click field `category` → pick từ dropdown (link to `categories_master`)
+Copy `Tên đầu việc` → paste vào `Tên đầu việc` field. Sau đó cho mỗi row:
+- Click field `Hạng mục` → pick từ dropdown (link to `Danh mục hạng mục`)
 - `phase` sẽ tự điền
 - Điền `priority`, `default_owner_role`
 
@@ -210,7 +210,7 @@ Attachment (standard_doc, sample_image) + các note text → điền dần khi c
 
 ---
 
-## Bước 5 — `sample_products`
+## Bước 5 — `Thư viện mẫu sản phẩm`
 
 ### 5.1 Schema
 
@@ -218,7 +218,7 @@ Attachment (standard_doc, sample_image) + các note text → điền dần khi c
 |---|---|---|
 | 1 | `sample_code` | **Formula** `CONCATENATE("SMP-", TEXT({auto_num}, "000"))` |
 | 2 | `auto_num` | **Autonumber** (hide) |
-| 3 | `category` | **Link** → `categories_master` |
+| 3 | `Hạng mục` | **Link** → `Danh mục hạng mục` |
 | 4 | `description` | **Text** |
 | 5 | `images` | **Attachment** |
 | 6 | `supplier_hint` | **Text** (tùy chọn) |
@@ -228,48 +228,48 @@ Attachment (standard_doc, sample_image) + các note text → điền dần khi c
 
 Mở HBSS cũ → Table 8 **Thiết Lập** → filter `Chức năng bảng = Sản phẩm mẫu` → copy rows.
 
-Paste `description`, link `category`. Upload ảnh từng row (download từ HBSS cũ rồi upload).
+Paste `description`, link `Hạng mục`. Upload ảnh từng row (download từ HBSS cũ rồi upload).
 
 💡 Nếu có ~10-20 ảnh thì làm tay OK. Nếu >50 thì viết script MCP batch sau.
 
 ---
 
-## Bước 6 — `vendors_master`
+## Bước 6 — `Danh mục đối tác`
 
 ### 6.1 Schema
 
 | # | Field | Type | Config |
 |---|---|---|---|
-| 1 | `vendor_code` | **Formula** `CONCATENATE("VEN-", TEXT(YEAR(CREATED_TIME()), "0"), "-", TEXT({auto_num}, "000"))` | Primary |
+| 1 | `Mã đối tác` | **Formula** `CONCATENATE("VEN-", TEXT(YEAR(CREATED_TIME()), "0"), "-", TEXT({auto_num}, "000"))` | Primary |
 | 2 | `auto_num` | **Autonumber** | Hide |
 | 3 | `company_name` | **Text** | |
 | 4 | `vendor_type` | **MultiSelect** | `NTP-Thi công`, `NTP-Thiết kế`, `NCC-Vật tư`, `NCC-Thiết bị` |
-| 5 | `category_specialization` | **Link (multi)** → `categories_master` | |
+| 5 | `category_specialization` | **Link (multi)** → `Danh mục hạng mục` | |
 | 6 | `contact_person` | **Text** | |
 | 7 | `phone_company` | **Phone** | |
 | 8 | `phone_contact` | **Phone** | |
 | 9 | `address` | **Text** | |
 | 10 | `tax_code` | **Text** | MST |
 | 11 | `bank_info` | **Text** | Long text |
-| 12 | `status` | **SingleSelect** | `Active`, `Trial`, `Blacklisted` |
+| 12 | `Trạng thái` | **SingleSelect** | `Active`, `Trial`, `Blacklisted` |
 | 13 | `first_worked_date` | **Date** | |
-| 14 | `notes` | **Text** | |
+| 14 | `Ghi chú` | **Text** | |
 
-⚠️ Field `overall_score` và `projects_count` là **Rollup từ scorecards** — SẼ tạo ở Bước tương lai (sau khi template v2 có table `vendor_scorecards`). Tạm bỏ qua.
+⚠️ Field `overall_score` và `projects_count` là **Rollup từ Chấm điểm đối tác** — SẼ tạo ở Bước tương lai (sau khi template v2 có table `Chấm điểm đối tác`). Tạm bỏ qua.
 
 ### 6.2 Dedupe & seed từ HBSS cũ
 
 1. Mở HBSS cũ → tìm field text **"Tên đơn vị thi công"** trong các table
 2. Export list unique → Excel/Sheet
-3. **Dedupe manual**: "ABC", "ABC Co.", "Cty ABC" → gộp thành 1 vendor
+3. **Dedupe manual**: "ABC", "ABC Co.", "Cty ABC" → gộp thành 1 Đơn vị/Đối tác
 4. Gán `vendor_type`, `category_specialization` cho từng cái
-5. Bulk import vào `vendors_master` (paste multi-row)
+5. Bulk import vào `Danh mục đối tác` (paste multi-row)
 
 💡 Dedupe là việc lần duy nhất tốn thời gian. Sau khi làm xong, mọi dự án mới đều Link về entity chuẩn.
 
 ---
 
-## Bước 7 — `customers_master` (SCHEMA ONLY, no seed)
+## Bước 7 — `Danh mục khách hàng` (SCHEMA ONLY, no seed)
 
 ⚠️ **Quan trọng**: CHỈ build schema. **KHÔNG seed data khách hàng cũ** đến khi Phase 2 Sales (D) xong. Phase 2 sẽ thêm field Sales → tránh migrate 2 lần.
 
@@ -277,12 +277,12 @@ Paste `description`, link `category`. Upload ảnh từng row (download từ HBS
 
 | # | Field | Type | Config |
 |---|---|---|---|
-| 1 | `customer_code` | **Formula** `CONCATENATE("CUS-", TEXT(YEAR(CREATED_TIME()), "0"), "-", TEXT({auto_num}, "000"))` | Primary |
+| 1 | `Mã khách hàng` | **Formula** `CONCATENATE("CUS-", TEXT(YEAR(CREATED_TIME()), "0"), "-", TEXT({auto_num}, "000"))` | Primary |
 | 2 | `auto_num` | **Autonumber** | Hide |
-| 3 | `full_name` | **Text** | |
+| 3 | `Họ và tên` | **Text** | |
 | 4 | `phone_primary` | **Phone** | |
 | 5 | `phone_secondary` | **Phone** | |
-| 6 | `email` | **Email** | |
+| 6 | `Email` | **Email** | |
 | 7 | `id_card_number` | **Text** | ⚠️ PII |
 | 8 | `date_of_birth` | **Date** | |
 | 9 | `address_permanent` | **Text** | |
@@ -290,27 +290,27 @@ Paste `description`, link `category`. Upload ảnh từng row (download từ HBS
 | 11 | `referral_source` | **SingleSelect** | `Facebook`, `Google`, `Referral`, `Zalo`, `YouTube`, `Event`, `Khác` |
 | 12 | `lark_chat_page_id` | **Text** | |
 | 13 | `created_at` | **Created Time** | Auto |
-| 14 | `notes` | **Text** | |
+| 14 | `Ghi chú` | **Text** | |
 
 ### 7.2 Seed
-**BỎ QUA ở bước này**. Tạo 1 row test dummy (`full_name = "TEST - DELETE ME"`) để verify formula → xóa ngay sau đó.
+**BỎ QUA ở bước này**. Tạo 1 row test dummy (`Họ và tên = "TEST - DELETE ME"`) để verify formula → xóa ngay sau đó.
 
 ---
 
 ## Bước 8 — Verification checklist
 
 - [ ] Base có 7 table đúng tên
-- [ ] `categories_master` có 44 row, mỗi row có phase + display_order
-- [ ] `contract_types_master` có 5-6 row
-- [ ] `staff_master` có đủ NV hiện tại, auto-code chạy đúng
-- [ ] `work_library` có ~36 row, Link `category` hoạt động, Lookup `phase` tự điền
-- [ ] `sample_products` có data + ảnh
-- [ ] `vendors_master` dedupe xong, Link `category_specialization` hoạt động
-- [ ] `customers_master` schema OK, chưa có data thật (chỉ 0 hoặc 1 row test đã xóa)
-- [ ] Thử link từ 1 work_library record → categories_master → mở được target
+- [ ] `Danh mục hạng mục` có 44 row, mỗi row có phase + display_order
+- [ ] `Loại hợp đồng mẫu` có 5-6 row
+- [ ] `Danh mục nhân sự` có đủ NV hiện tại, auto-code chạy đúng
+- [ ] `Thư viện đầu việc` có ~36 row, Link `Hạng mục` hoạt động, Lookup `phase` tự điền
+- [ ] `Thư viện mẫu sản phẩm` có data + ảnh
+- [ ] `Danh mục đối tác` dedupe xong, Link `category_specialization` hoạt động
+- [ ] `Danh mục khách hàng` schema OK, chưa có data thật (chỉ 0 hoặc 1 row test đã xóa)
+- [ ] Thử link từ 1 Thư viện đầu việc record → Danh mục hạng mục → mở được target
 
 ### Test cross-table reference
-Ở `work_library`, click vào 1 Link `category` → phải jump sang `categories_master` đúng row. Ở ngược lại, mở 1 row `categories_master` → phải thấy **reverse link** `Linked records in work_library` (Lark tự tạo).
+Ở `Thư viện đầu việc`, click vào 1 Link `Hạng mục` → phải jump sang `Danh mục hạng mục` đúng row. Ở ngược lại, mở 1 row `Danh mục hạng mục` → phải thấy **reverse link** `Linked records in Thư viện đầu việc` (Lark tự tạo).
 
 ---
 
@@ -320,18 +320,18 @@ Paste `description`, link `category`. Upload ảnh từng row (download từ HBS
 
 1. Góc phải Base → **Share**
 2. **"Add members"** → add team QLDA + Sales + BOD
-3. Set role:
+3. Set Vai trò:
    - **BOD / Nam**: Can edit (full admin)
    - **PM / Account / CA**: Can edit
-   - **Sale / TK / PO**: Can edit (hoặc View-only tùy role — xem 9.2)
+   - **Sale / TK / PO**: Can edit (hoặc View-only tùy Vai trò — xem 9.2)
    - **NTP / NCC** (future): Không share Base master, chỉ share per-project file
 
 ### 9.2 Hide PII cho non-BOD roles (optional v1, bắt buộc Phase 1)
 
 Lark Base hỗ trợ **field-level permission**:
-1. Right-click field `id_card_number` ở `customers_master` → **"Field Permissions"**
+1. Right-click field `id_card_number` ở `Danh mục khách hàng` → **"Field Permissions"**
 2. Set: Only `BOD`, `Account lead`, `QLDA lead` có thể view
-3. Lặp tương tự cho `bank_info` ở `vendors_master`, `phone`/`email_work` ở `staff_master`
+3. Lặp tương tự cho `bank_info` ở `Danh mục đối tác`, `Số điện thoại`/`email_work` ở `Danh mục nhân sự`
 
 *Có thể làm sau khi seed xong, trước khi Phase 1 production.*
 
@@ -353,17 +353,17 @@ Lark Base hỗ trợ **field-level permission**:
 Khi paste nhiều row cùng lúc, `auto_num` cần 1-2 giây để populate. Formula `xxx_code` sẽ empty tạm thời → refresh (F5) là thấy.
 
 ### A.3 Không thể đổi type field sau khi có data
-Nếu lỡ tạo `phone` kiểu Text thay vì Phone → phải tạo field mới + migrate data. **Kiểm tra type trước khi paste data.**
+Nếu lỡ tạo `Số điện thoại` kiểu Text thay vì Phone → phải tạo field mới + migrate data. **Kiểm tra type trước khi paste data.**
 
 ### A.4 Link field behavior
-- Đổi `category_name` của 1 row ở `categories_master` → **mọi Link ở work_library/vendors tự update** theo (tốt)
-- Xóa 1 row ở `categories_master` mà có Link đang reference → Lark báo cảnh báo, **không auto-cascade** (cần fix thủ công)
+- Đổi `category_name` của 1 row ở `Danh mục hạng mục` → **mọi Link ở Thư viện đầu việc/Danh mục đối tác tự update** theo (tốt)
+- Xóa 1 row ở `Danh mục hạng mục` mà có Link đang reference → Lark báo cảnh báo, **không auto-cascade** (cần fix thủ công)
 
 ### A.5 Autonumber bắt đầu từ đâu?
 Mặc định từ 1. Muốn bắt đầu từ số khác (vd: `STAFF-100` để phân biệt với test): setting field Autonumber → "Starting value".
 
 ### A.6 Field Lookup chỉ đi 1 hop
-`work_library.phase` lookup qua `category → phase` (1 hop): OK.
+`Thư viện đầu việc.phase` lookup qua `Hạng mục → phase` (1 hop): OK.
 Muốn 2 hop (vd: lookup qua 2 link) → phải tạo thêm intermediate field.
 
 ---
@@ -372,7 +372,7 @@ Muốn 2 hop (vd: lookup qua 2 link) → phải tạo thêm intermediate field.
 
 - Master Base đã sẵn sàng làm **source of truth cho 6 entity**
 - Customer entity chờ Phase 2 Sales bổ sung field → mới seed
-- Next: **Phase 2 Sales design (D)** → review lại customers_master + staff_master
+- Next: **Phase 2 Sales design (D)** → review lại Danh mục khách hàng + Danh mục nhân sự
 - Sau D: build Template v2 (Layer 2) → clone cho mọi dự án mới
 - Song song: setup Warehouse Layer 3 (Supabase) + webhook sync
 
